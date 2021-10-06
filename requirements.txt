@@ -1,0 +1,14 @@
+Django>=3.1,<4.0
+psycopg2-binary==2.8.6
+djangorestframework
+django-cors-headers
+django-crispy-forms
+requests
+djoser
+djangorestframework_simplejwt
+schedule
+redis
+celery
+django-celery-results
+pymongo[snappy,gssapi,srv,tls]
+dnspython

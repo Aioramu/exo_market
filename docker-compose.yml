@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432"
+  mongodb:
+    image: 'mongo:4'
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=username
+      - MONGO_INITDB_ROOT_PASSWORD=RooTpasS
+    command: mongod --port 27018
+    ports:
+      - 27018:27018
+  web:
+    restart: always
+    build: .
+    command: bash -c "python manage.py makemigrations &&python manage.py migrate && python manage.py runserver 0.0.0.0:9000"
+    volumes:
+      - .:/code
+    ports:
+      - "9000:9000"
+    depends_on:
+      - db
+    restart: on-failure
