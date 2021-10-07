@@ -1,6 +1,9 @@
 name: Test docker-compose
 
-on: [push]
+on:
+  push:
+    branches:
+      - dev
 
 jobs:
   hello_world_job:
@@ -10,7 +13,6 @@ jobs:
       - name: Hello world action step
         id: hello
         uses: actions/checkout@v3
-        with:
       # Use the output from the `hello` step
       - name: Get the output time
         run: docker-compose build
