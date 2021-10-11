@@ -61,10 +61,10 @@ class Location(models.Model):
     house=models.IntegerField(null=True,default=None)
 class User(AbstractBaseUser):
     phone=models.BigIntegerField(unique=True)
-    role=models.ForeignKey(Role,to_field='role',on_delete=models.CASCADE,null=True,default=None)
+    role=models.ForeignKey(Role,to_field='role',on_delete=models.SET_NULL,null=True,default=None)
     confirmed=models.BooleanField(default=False)
     subscribed=models.BooleanField(default=False)
-    location=models.ForeignKey(Location,on_delete=models.RESTRICT,null=True,default=None)
+    location=models.ForeignKey(Location,on_delete=models.SET_NULL,null=True,default=None)
     email = models.EmailField(
         verbose_name='email address',
         max_length=255,

@@ -7,7 +7,7 @@ urlpatterns = [
     url(r'registration/$', views.Registration.as_view()),
     url(r'metro/$', views.Metros.as_view()),
     url(r'city/$', views.Citys.as_view()),
-    path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.authtoken')),
-    path('auth/', include('djoser.urls.jwt')),
+    #path('auth/', include('djoser.urls')),
+    #path('auth/', include('djoser.urls.authtoken')),
+    #path('auth/', include('djoser.urls.jwt')),
 ]
