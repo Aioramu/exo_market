@@ -11,6 +11,8 @@ from rest_framework.permissions import IsAdminUser
 from pymongo import MongoClient
 import json
 from bson import json_util
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.settings import api_settings
 connection_string = 'mongodb://username:RooTpasS@mongodb/myFirstDatabase?retryWrites=true&w=majority'
 #client = MongoClient(connection_string)
 
@@ -24,10 +26,25 @@ db = client['db_name']
 #items=collection.find_one({"_id": post_id})
 #tmp=json.loads(json_util.dumps(items))
 # Create your views here.
-class Announcements(APIView):
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+class AnnouncementRecordsView(generics.ListCreateAPIView):
+    parser_classes = [FormParser,MultiPartParser]
+    queryset = Announcement.objects.all()
+    serializer_class = AnnounceSerializer
+    pagination_class = StandardResultsSetPagination
+    """
+    def list(self, request):
+        # Note the use of `get_queryset()` instead of `self.queryset`
+        queryset = self.get_queryset()
+        serializer = AnnounceSerializer(queryset, many=True)
+        return Response(serializer.data)
+    """
     def mongo_create(self,data,full_data):
         tmp={}
-        print(data,full_data)
+
         for i in full_data.keys():
             if i not in data.keys():
                 tmp[i]=full_data[i]
@@ -39,12 +56,6 @@ class Announcements(APIView):
         for i in data:
             tmp[i]=data[i]
         return tmp
-    parser_classes = [FormParser,MultiPartParser]
-    def get(self,request):
-        print(request.query_params)
-        queryset = Announcement.objects.all()
-        serializer=AnnounceSerializer(queryset,many=True)
-        return Response(serializer.data)
     def post(self,request):
         permission_classes = [permissions.IsAuthenticated]
         queryset=request.data.copy()
@@ -59,9 +70,9 @@ class Announcements(APIView):
             serializer.save()
             try:
                 tmp=self.mongo_create(serializer.data,request.data)
-            except:
-                tmp={}
-                serializer.delete()
+            except Exception as e:
+                tmp={"error":str(e)}
+                #serializer.delete()
             return Response(tmp)
         else:
             return Response(serializer.errors)
