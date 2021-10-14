@@ -3,11 +3,11 @@ from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser,FormParser,MultiPartParser
-from rest_framework import authentication, permissions
+from rest_framework import authentication, permissions,exceptions
 from .models import Announcement,Announce_type
 from .serializers import AnnounceSerializer
 from rest_framework import generics
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser,IsAuthenticatedOrReadOnly
 from pymongo import MongoClient
 import json
 from bson import json_util
@@ -30,18 +30,33 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
     max_page_size = 100
+    def get_paginated_response(self, data):
+        return Response({
+            'links': {
+                'next': self.get_next_link(),
+                'previous': self.get_previous_link()
+            },
+            'count': self.page.paginator.count,
+            'fields':data[0].keys(),
+            'results': data
+        })
 class AnnouncementRecordsView(generics.ListCreateAPIView):
     parser_classes = [FormParser,MultiPartParser]
     queryset = Announcement.objects.all()
     serializer_class = AnnounceSerializer
     pagination_class = StandardResultsSetPagination
-    """
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     def list(self, request):
         # Note the use of `get_queryset()` instead of `self.queryset`
         queryset = self.get_queryset()
-        serializer = AnnounceSerializer(queryset, many=True)
-        return Response(serializer.data)
-    """
+        #serializer = AnnounceSerializer(queryset, many=True)
+        page = self.paginate_queryset(queryset)
+        serializer_context = {'request': request}
+        serializer = self.serializer_class(
+            page, context=serializer_context, many=True
+        )
+        return self.get_paginated_response(serializer.data)
+        #return Response(serializer.data)
     def mongo_create(self,data,full_data):
         tmp={}
 
@@ -78,9 +93,38 @@ class AnnouncementRecordsView(generics.ListCreateAPIView):
             return Response(serializer.errors)
 class Fields(APIView):
     types=['animals','perephriya']
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    #items=collection.find_one(params['type'])
     def get(self,request):
+        collection=db.get_collection("type")
         params=request.query_params
-        if 'type' in params:
-            collection=db.get_collection(params['type'])
-            items=collection.find_one(params['type'])
-            pass
+        print(params)
+        match params:
+            case {'type':'Animals'}:
+                return Response({"fields":["animal_type","name"]})
+            case {'animal_type':type}:#type->animal_type->name
+                return Response({"fields":"animal_name"})
+            case {'type':'Рerephriya'}:#
+                return Response({"perephriya_type":["heat","decor","substrat","sensors","others"]})         #->thermal_mat or stone
+            case {'perephriya_type':"heat"}:#type->perephriya_type->heat->lamp->fields
+                return Response({"heat":["lamp","thermal_mat"]})#       ->decor
+            case {"heat":"lamp"}:                               #       ->substrat
+                return Response({"lamp":["uvb","heat"]})        #       ->sensors
+            case {"lamp":"uvb"}:
+                return Response({"fields":["uvb_power","power","socket"]})
+            case {"lamp":"heat"}:
+                return Response({"fields":["power"]})
+            case _:
+                items=collection.find({})
+                tmp=json.loads(json_util.dumps(items))
+                return Response(tmp)
+                #raise exceptions.NotFound(" ")
+    def post(self,request):
+        collection=db.get_collection("type")
+        collection.insert_one(request.data).inserted_id
+        items=collection.find({})
+        tmp=json.loads(json_util.dumps(items))
+        return Response(tmp)
+
+
+#'Animals':['']

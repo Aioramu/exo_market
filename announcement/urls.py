@@ -4,7 +4,7 @@ from . import views
 
 urlpatterns = [
     url(r'announcements/$', views.AnnouncementRecordsView.as_view()),
-
+    url(r'announcements/fields/$', views.Fields.as_view()),
     #url(r'registration/$', views.Registration.as_view()),
     #url(r'metro/$', views.Metros.as_view()),
     #url(r'city/$', views.Citys.as_view()),
